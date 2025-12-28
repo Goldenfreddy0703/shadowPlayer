@@ -27,8 +27,24 @@ ADDON_ID = ADDON.getAddonInfo('id')
 ADDON_PATH = xbmcvfs.translatePath(ADDON.getAddonInfo('path'))
 ADDON_DATA = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
 
-# Configuration
-API_PORT = 8089
+# Configuration from settings
+def get_setting(key, default=None):
+    """Get addon setting with fallback"""
+    try:
+        value = ADDON.getSetting(key)
+        return value if value else default
+    except:
+        return default
+
+def get_setting_int(key, default=0):
+    """Get integer setting with fallback"""
+    try:
+        value = ADDON.getSettingInt(key)
+        return value if value else default
+    except:
+        return default
+
+API_PORT = get_setting_int('api_port', 8089)
 HLS_SEGMENT_TIME = 2  # seconds per segment
 HLS_LIST_SIZE = 5     # number of segments to keep
 
@@ -81,27 +97,60 @@ class FFmpegTranscoder:
     
     def find_ffmpeg(self):
         """Find FFmpeg binary"""
-        # Common locations
+        import shutil
+        
+        # First, check custom path from settings
+        custom_path = get_setting('ffmpeg_path', '')
+        if custom_path and os.path.isfile(custom_path):
+            log(f'Using custom FFmpeg path from settings: {custom_path}')
+            return custom_path
+        elif custom_path:
+            log(f'Custom FFmpeg path set but not found: {custom_path}', xbmc.LOGWARNING)
+        
+        # Try shutil.which (most reliable for PATH lookup)
+        ffmpeg_in_path = shutil.which('ffmpeg')
+        if ffmpeg_in_path:
+            log(f'Found FFmpeg via PATH: {ffmpeg_in_path}')
+            return ffmpeg_in_path
+        
+        # Common locations to check
         locations = [
-            'ffmpeg',  # In PATH
             '/usr/bin/ffmpeg',
             '/usr/local/bin/ffmpeg',
             '/opt/bin/ffmpeg',
+            '/storage/.kodi/addons/tools.ffmpeg-tools/bin/ffmpeg',  # LibreELEC ffmpeg-tools
+            '/storage/.kodi/addons/virtual.ffmpeg/bin/ffmpeg',  # LibreELEC virtual.ffmpeg
+            '/storage/emulated/0/ffmpeg',  # Android external storage
+            '/sdcard/ffmpeg',  # Android sdcard
             '/system/bin/ffmpeg',  # Android
+            '/system/xbin/ffmpeg',  # Android rooted
             '/data/data/org.xbmc.kodi/files/ffmpeg',  # Kodi Android
+            '/data/local/tmp/ffmpeg',  # Android
+            '/usr/lib/kodi/ffmpeg',  # Some Linux installs
+            '/var/packages/ffmpeg/target/bin/ffmpeg',  # Synology
         ]
         
+        checked_paths = []
         for loc in locations:
-            try:
-                result = subprocess.run([loc, '-version'], 
-                                       capture_output=True, 
-                                       timeout=5)
-                if result.returncode == 0:
-                    log(f'Found FFmpeg at: {loc}')
-                    return loc
-            except:
-                continue
+            checked_paths.append(loc)
+            if os.path.isfile(loc) and os.access(loc, os.X_OK):
+                # File exists and is executable
+                log(f'Found FFmpeg at: {loc}')
+                return loc
+            elif os.path.isfile(loc):
+                # File exists but may not be executable - try anyway
+                try:
+                    result = subprocess.run([loc, '-version'], 
+                                           capture_output=True, 
+                                           timeout=5)
+                    if result.returncode == 0:
+                        log(f'Found FFmpeg at: {loc}')
+                        return loc
+                except Exception as e:
+                    log(f'FFmpeg at {loc} exists but failed: {e}', xbmc.LOGDEBUG)
         
+        # Log which paths were checked
+        log(f'FFmpeg not found. Checked: {", ".join(checked_paths)}', xbmc.LOGWARNING)
         return None
     
     def start(self, rtsp_url):
@@ -115,7 +164,7 @@ class FFmpegTranscoder:
         
         ffmpeg_path = self.find_ffmpeg()
         if not ffmpeg_path:
-            self.error = "FFmpeg not found. Please install FFmpeg."
+            self.error = "FFmpeg not found! Install FFmpeg or 'ffmpeg-tools' addon on LibreELEC. Check Kodi log for details."
             log(self.error, xbmc.LOGERROR)
             return False
         

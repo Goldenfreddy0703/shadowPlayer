@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings version="2">
+    <section id="general">
+        <category id="general" label="General">
+            <group id="ffmpeg" label="FFmpeg Settings">
+                <setting id="ffmpeg_path" type="string" label="Custom FFmpeg path" help="Leave empty for auto-detection. Set full path to ffmpeg binary if not found automatically.">
+                    <default></default>
+                    <control type="edit" format="string" />
+                </setting>
+            </group>
+            <group id="api" label="API Settings">
+                <setting id="api_port" type="integer" label="API Port" help="HTTP API port for the RTSP bridge service">
+                    <default>8089</default>
+                    <constraints>
+                        <minimum>1024</minimum>
+                        <maximum>65535</maximum>
+                    </constraints>
+                    <control type="edit" format="integer" />
+                </setting>
+            </group>
+            <group id="quality" label="Quality Settings">
+                <setting id="video_bitrate" type="integer" label="Video bitrate (kbps)" help="Higher = better quality but more bandwidth">
+                    <default>2500</default>
+                    <constraints>
+                        <minimum>500</minimum>
+                        <maximum>10000</maximum>
+                    </constraints>
+                    <control type="edit" format="integer" />
+                </setting>
+                <setting id="resolution" type="string" label="Max resolution" help="Scale video down to this resolution">
+                    <default>1280:720</default>
+                    <constraints>
+                        <options>
+                            <option label="720p (1280x720)">1280:720</option>
+                            <option label="1080p (1920x1080)">1920:1080</option>
+                            <option label="480p (854x480)">854:480</option>
+                            <option label="Original (no scaling)">-1:-1</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="string" />
+                </setting>
+            </group>
+        </category>
+    </section>
+</settings>
