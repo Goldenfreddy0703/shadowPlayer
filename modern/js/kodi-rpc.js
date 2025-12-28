@@ -209,16 +209,38 @@ export class KodiRPC {
      * Prepare a file for download (get HTTP URL)
      */
     async prepareDownload(path) {
+        console.log('prepareDownload called with:', path);
+        
         try {
             // Check if it's already an HTTP URL
             if (path.startsWith('http://') || path.startsWith('https://')) {
+                console.log('Already HTTP URL, returning as-is');
                 return path;
             }
             
-            const result = await this.send('Files.PrepareDownload', { path });
-            return `http://${this.host}:${this.httpPort}/${result.details.path}`;
+            // Try Files.PrepareDownload first - this is the proper way
+            try {
+                const result = await this.send('Files.PrepareDownload', { path });
+                const url = `http://${this.host}:${this.httpPort}/${result.details.path}`;
+                console.log('Files.PrepareDownload succeeded:', url);
+                return url;
+            } catch (prepareError) {
+                console.warn('Files.PrepareDownload failed:', prepareError);
+            }
+            
+            // Fallback 1: Try VFS with just the path (no encoding of slashes)
+            // Some Kodi versions want: /vfs/path/to/file.mp4
+            const vfsUrl1 = `http://${this.host}:${this.httpPort}/vfs${path}`;
+            console.log('Trying VFS URL (unencoded):', vfsUrl1);
+            
+            // Actually return the encoded version as that's more standard
+            const vfsUrl2 = this.vfsUrl + encodeURIComponent(path);
+            console.log('Using VFS URL (encoded):', vfsUrl2);
+            return vfsUrl2;
+            
         } catch (e) {
-            // Fallback to VFS URL
+            console.error('prepareDownload error:', e);
+            // Last resort fallback
             return this.vfsUrl + encodeURIComponent(path);
         }
     }

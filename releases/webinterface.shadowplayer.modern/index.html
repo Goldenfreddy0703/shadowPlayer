@@ -388,6 +388,14 @@
                     <h3>⚠️ Video Error</h3>
                     <p id="error-text">Unable to play this video</p>
                     <p class="url" id="error-url"></p>
+                    <p style="margin-top: 1rem; font-size: 0.8rem; color: #888;">
+                        Try opening the URL directly in a new tab to test if the file is accessible.
+                        <br>Quest browser may not support all video codecs.
+                    </p>
+                    <button onclick="window.open(document.getElementById('error-url').textContent.replace('URL: ', ''), '_blank')" 
+                            style="margin-top: 1rem; padding: 0.5rem 1rem; background: #444; border: none; color: white; border-radius: 4px; cursor: pointer;">
+                        Open URL in new tab
+                    </button>
                 </div>
 
                 <div class="controls">
