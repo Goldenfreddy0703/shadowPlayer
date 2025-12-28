@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shadow Player</title>
+    <link rel="icon" href="../assets/icon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-color: #1a1a2e;
+            --text-color: #eee;
+            --accent-color: #0f3460;
+            --highlight-color: #e94560;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #app {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Connection screen */
+        .connection-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .connection-screen h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .connection-screen p {
+            color: #888;
+            margin-bottom: 2rem;
+        }
+
+        .connection-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .connection-form input {
+            padding: 1rem;
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-color);
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .connection-form input:focus {
+            outline: none;
+            border-color: var(--highlight-color);
+        }
+
+        .connection-form button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--highlight-color);
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .connection-form button:hover {
+            opacity: 0.9;
+        }
+
+        .connection-form button:active {
+            transform: scale(0.98);
+        }
+
+        .connection-form button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: var(--highlight-color);
+            margin-top: 1rem;
+        }
+
+        /* Player screen */
+        .player-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .player-screen.hidden {
+            display: none;
+        }
+
+        .video-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            position: relative;
+        }
+
+        #video {
+            max-width: 100%;
+            max-height: 100%;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .now-playing {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .player-screen:hover .now-playing,
+        .player-screen.show-controls .now-playing {
+            opacity: 1;
+        }
+
+        .now-playing h2 {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .now-playing p {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .player-screen:hover .controls,
+        .player-screen.show-controls .controls {
+            opacity: 1;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            cursor: pointer;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar .progress {
+            height: 100%;
+            background: var(--highlight-color);
+            border-radius: 3px;
+            transition: width 0.1s linear;
+        }
+
+        .control-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .control-buttons .left,
+        .control-buttons .right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .control-btn:hover {
+            opacity: 1;
+        }
+
+        .time-display {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .volume-slider {
+            width: 80px;
+            accent-color: var(--highlight-color);
+        }
+
+        /* Stats overlay */
+        .stats {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: monospace;
+            display: none;
+        }
+
+        .stats.visible {
+            display: block;
+        }
+
+        .stats dt {
+            color: #888;
+            display: inline;
+        }
+
+        .stats dd {
+            display: inline;
+            margin-left: 0.5rem;
+            margin-right: 1rem;
+        }
+
+        /* Idle state message */
+        .idle-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #666;
+        }
+
+        .idle-message svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .idle-message.hidden {
+            display: none;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+        }
+
+        .status-indicator.disconnected {
+            background: var(--highlight-color);
+        }
+
+        .status-indicator.syncing {
+            background: #FFC107;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Connection Screen -->
+        <div id="connection-screen" class="connection-screen">
+            <h1>Shadow Player</h1>
+            <p>Mirror Kodi playback to your browser</p>
+            
+            <form class="connection-form" id="connect-form">
+                <input type="text" id="host-input" placeholder="Kodi IP address (e.g., 192.168.1.100)" 
+                       autocomplete="off" autofocus>
+                <input type="number" id="port-input" placeholder="HTTP Port (default: 8080)" value="8080">
+                <button type="submit" id="connect-btn">Connect</button>
+            </form>
+            
+            <p class="error-message" id="error-message"></p>
+        </div>
+
+        <!-- Player Screen -->
+        <div id="player-screen" class="player-screen hidden">
+            <div class="status-indicator" id="status-indicator"></div>
+            
+            <div class="video-container" id="video-container">
+                <video id="video" autoplay></video>
+                
+                <div class="idle-message" id="idle-message">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9 8l7 4-7 4V8z"/>
+                    </svg>
+                    <p>Waiting for Kodi playback...</p>
+                </div>
+
+                <div class="now-playing" id="now-playing">
+                    <h2 id="title">-</h2>
+                    <p id="subtitle"></p>
+                </div>
+
+                <div class="stats" id="stats">
+                    <dt>Delta</dt><dd id="stat-delta">-</dd>
+                    <dt>Lag</dt><dd id="stat-lag">-</dd>
+                    <dt>Sync</dt><dd id="stat-sync">-</dd>
+                </div>
+
+                <div class="controls">
+                    <div class="progress-bar" id="progress-bar">
+                        <div class="progress" id="progress"></div>
+                    </div>
+                    <div class="control-buttons">
+                        <div class="left">
+                            <button class="control-btn" id="play-pause-btn">⏯️</button>
+                            <span class="time-display">
+                                <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+                            </span>
+                        </div>
+                        <div class="right">
+                            <div class="volume-control">
+                                <button class="control-btn" id="mute-btn">🔊</button>
+                                <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="100">
+                            </div>
+                            <button class="control-btn" id="stats-btn" title="Toggle stats">📊</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
