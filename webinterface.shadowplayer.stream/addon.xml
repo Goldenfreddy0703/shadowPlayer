@@ -6,8 +6,8 @@
 	<extension point="xbmc.webinterface" library="." />
 	<extension point="xbmc.addon.metadata">
 		<platform>all</platform>
-		<summary lang="en">Stream viewer with RTSP/HLS support</summary>
-		<description lang="en">A web interface for viewing RTSP and HLS streams. Enter your stream URL and watch in your browser. Works with Screen Stream app for screen mirroring.</description>
+		<summary lang="en">RTSP Stream Viewer for Shadow Player</summary>
+		<description lang="en">Web interface for viewing RTSP streams. Enter your RTSP URL and the service will transcode it to HLS for browser playback. Works with Screen Stream app for screen mirroring. Requires the Shadow Player RTSP Bridge service addon.</description>
 		<license>GPL-3.0</license>
 	</extension>
 </addon>

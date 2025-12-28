@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="service.shadowplayer.rtsp" name="Shadow Player RTSP Service" provider-name="Goldenfreddy0703" version="1.0.0">
+<addon id="service.shadowplayer.rtsp" name="Shadow Player RTSP Bridge" provider-name="Goldenfreddy0703" version="1.0.0">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
     </requires>
     <extension point="xbmc.service" library="service.py" start="startup"/>
     <extension point="xbmc.addon.metadata">
         <platform>all</platform>
-        <summary lang="en">RTSP to HLS transcoding service for Shadow Player</summary>
-        <description lang="en">Converts RTSP streams to HLS for browser playback. Use with Screen Stream app to mirror your Kodi screen to any browser.</description>
+        <summary lang="en">RTSP to HLS transcoding bridge for Shadow Player</summary>
+        <description lang="en">Converts RTSP streams to HLS for browser playback. Runs FFmpeg in the background to transcode your RTSP stream (like from Screen Stream app) into browser-compatible HLS format. Requires FFmpeg to be installed on the system.</description>
         <license>GPL-3.0</license>
     </extension>
 </addon>

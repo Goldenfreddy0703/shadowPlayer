@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shadow Player Stream</title>
+    <title>Shadow Player - RTSP Stream</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         * {
@@ -17,6 +17,8 @@
             --text-color: #eee;
             --accent-color: #0f3460;
             --highlight-color: #e94560;
+            --success-color: #4CAF50;
+            --warning-color: #FFC107;
         }
 
         body {
@@ -33,13 +35,16 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
         }
 
         h1 {
             font-size: 2rem;
             margin-bottom: 0.5rem;
+            text-align: center;
         }
 
         .subtitle {
@@ -48,18 +53,17 @@
             text-align: center;
         }
 
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+        /* Input Section */
+        .input-section {
             width: 100%;
             max-width: 700px;
             margin-bottom: 2rem;
         }
 
-        .input-row {
+        .input-group {
             display: flex;
             gap: 0.5rem;
+            margin-bottom: 1rem;
         }
 
         input[type="text"] {
@@ -77,133 +81,128 @@
             border-color: var(--highlight-color);
         }
 
+        input[type="text"].error {
+            border-color: var(--highlight-color);
+        }
+
         button {
-            padding: 1rem 2rem;
+            padding: 1rem 1.5rem;
             border: none;
             border-radius: 8px;
             background: var(--highlight-color);
             color: white;
             font-size: 1rem;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, transform 0.1s;
+            white-space: nowrap;
         }
 
         button:hover {
             opacity: 0.9;
         }
 
-        .stream-type-selector {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            justify-content: center;
+        button:active {
+            transform: scale(0.98);
         }
 
-        .type-btn {
-            padding: 0.75rem 1.25rem;
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
             background: var(--accent-color);
-            font-size: 0.9rem;
         }
 
-        .type-btn.active {
+        button.success {
+            background: var(--success-color);
+        }
+
+        /* Status Section */
+        .status-section {
+            width: 100%;
+            max-width: 700px;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #888;
+        }
+
+        .status-dot.running {
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.error {
             background: var(--highlight-color);
         }
 
-        .video-container {
+        .status-dot.starting {
+            background: var(--warning-color);
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-size: 0.95rem;
+        }
+
+        .status-text small {
+            color: #888;
+            display: block;
+            margin-top: 0.25rem;
+        }
+
+        /* Video Section */
+        .video-section {
             width: 100%;
             max-width: 1000px;
+            display: none;
+        }
+
+        .video-section.active {
+            display: block;
+        }
+
+        .video-container {
             background: #000;
             border-radius: 8px;
             overflow: hidden;
-            display: none;
             position: relative;
-        }
-
-        .video-container.active {
-            display: block;
         }
 
         video {
             width: 100%;
             height: auto;
-            max-height: 75vh;
+            max-height: 70vh;
+            display: block;
         }
 
-        .status {
-            margin-top: 1rem;
-            padding: 0.75rem 1.5rem;
-            background: rgba(0,0,0,0.3);
-            border-radius: 4px;
-            font-size: 0.9rem;
-            text-align: center;
-        }
-
-        .status.error {
-            color: #ff6b6b;
-            background: rgba(255, 100, 100, 0.1);
-        }
-
-        .status.success {
-            color: #4CAF50;
-            background: rgba(76, 175, 80, 0.1);
-        }
-
-        .status.warning {
-            color: #FFC107;
-            background: rgba(255, 193, 7, 0.1);
-        }
-
-        .info-box {
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            max-width: 700px;
-            width: 100%;
-        }
-
-        .info-box h3 {
-            font-size: 1rem;
-            color: #888;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .info-box p {
-            font-size: 0.9rem;
-            color: #aaa;
-            line-height: 1.6;
-            margin-bottom: 0.5rem;
-        }
-
-        .info-box code {
-            background: rgba(0,0,0,0.3);
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            color: var(--highlight-color);
-        }
-
-        .controls {
-            display: none;
-            gap: 1rem;
-            margin-top: 1rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .controls.active {
-            display: flex;
-        }
-
-        .control-btn {
-            padding: 0.75rem 1.5rem;
-            background: var(--accent-color);
-        }
-
-        .loading-overlay {
+        .video-overlay {
             position: absolute;
             top: 0;
             left: 0;
@@ -211,13 +210,13 @@
             bottom: 0;
             background: rgba(0,0,0,0.8);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
             gap: 1rem;
         }
 
-        .loading-overlay.hidden {
+        .video-overlay.hidden {
             display: none;
         }
 
@@ -233,122 +232,422 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .video-controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .video-controls button {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.9rem;
+        }
+
+        /* Error/Info Messages */
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .message.error {
+            background: rgba(233, 69, 96, 0.2);
+            border: 1px solid var(--highlight-color);
+            color: #ff8a9b;
+        }
+
+        .message.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid var(--success-color);
+            color: #81c784;
+        }
+
+        .message.info {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid var(--warning-color);
+            color: #ffd54f;
+        }
+
+        /* Help Section */
+        .help-section {
+            width: 100%;
+            max-width: 700px;
+            margin-top: 2rem;
+        }
+
+        .help-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .help-card h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: #aaa;
+        }
+
+        .help-card ol {
+            padding-left: 1.5rem;
+            color: #ccc;
+            line-height: 1.8;
+        }
+
+        .help-card code {
+            background: rgba(0,0,0,0.3);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--highlight-color);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: auto;
+            padding: 1rem;
+            text-align: center;
+            color: #666;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎬 Shadow Player Stream</h1>
-        <p class="subtitle">
-            Enter your stream URL to watch in the browser<br>
-            <small>Works with RTSP-to-HLS converters like Screen Stream app</small>
-        </p>
+        <h1>🎬 Shadow Player RTSP</h1>
+        <p class="subtitle">Stream your screen to the browser via RTSP</p>
 
-        <div class="input-group">
-            <div class="stream-type-selector">
-                <button class="type-btn active" data-type="hls">HLS Stream (.m3u8)</button>
-                <button class="type-btn" data-type="rtsp-info">RTSP (needs converter)</button>
-                <button class="type-btn" data-type="direct">Direct (MP4/WebM)</button>
-            </div>
-            
-            <div class="input-row">
-                <input type="text" id="stream-url" placeholder="http://192.168.1.x:8080/stream.m3u8">
-                <button id="play-btn">▶ Play</button>
+        <!-- Message Area -->
+        <div id="message" class="message" style="display: none;"></div>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <div class="input-group">
+                <input type="text" id="rtsp-url" placeholder="rtsp://192.168.1.100:5540/screen" autocomplete="off">
+                <button id="start-btn">▶ Start Stream</button>
             </div>
         </div>
 
-        <div class="video-container" id="video-container">
-            <video id="video" controls autoplay playsinline></video>
-            <div class="loading-overlay" id="loading">
-                <div class="spinner"></div>
-                <span>Connecting to stream...</span>
+        <!-- Status Section -->
+        <div class="status-section">
+            <div class="status-card">
+                <div class="status-indicator">
+                    <div class="status-dot" id="status-dot"></div>
+                    <div class="status-text">
+                        <span id="status-label">Not connected</span>
+                        <small id="status-detail">Enter RTSP URL above</small>
+                    </div>
+                </div>
+                <button id="stop-btn" class="secondary" style="display: none;">⏹ Stop</button>
             </div>
         </div>
 
-        <div class="controls" id="controls">
-            <button class="control-btn" id="fullscreen-btn">⛶ Fullscreen</button>
-            <button class="control-btn" id="pip-btn">📺 Picture-in-Picture</button>
-            <button class="control-btn" id="stop-btn">⏹ Stop</button>
+        <!-- Video Section -->
+        <div class="video-section" id="video-section">
+            <div class="video-container">
+                <video id="video" controls autoplay playsinline muted></video>
+                <div class="video-overlay" id="video-overlay">
+                    <div class="spinner"></div>
+                    <span>Waiting for stream...</span>
+                </div>
+            </div>
+            <div class="video-controls">
+                <button id="unmute-btn" class="success">🔊 Unmute</button>
+                <button id="fullscreen-btn" class="secondary">⛶ Fullscreen</button>
+                <button id="pip-btn" class="secondary">📺 Picture-in-Picture</button>
+            </div>
         </div>
 
-        <div class="status" id="status"></div>
-
-        <div class="info-box" id="rtsp-info" style="display: none;">
-            <h3>📡 Using RTSP with Screen Stream</h3>
-            <p><strong>Step 1:</strong> Install "Screen Stream" app on your Kodi/Android device</p>
-            <p><strong>Step 2:</strong> In Screen Stream settings, enable <code>HLS output</code> (not just RTSP)</p>
-            <p><strong>Step 3:</strong> Start the stream - it will show an HLS URL like:</p>
-            <p><code>http://192.168.1.x:8080/stream.m3u8</code></p>
-            <p><strong>Step 4:</strong> Enter that HLS URL above and click Play!</p>
-            <p style="margin-top: 1rem; color: #888;"><em>Note: Browsers cannot play RTSP directly. Screen Stream's HLS output provides browser-compatible streaming.</em></p>
-        </div>
-
-        <div class="info-box" id="hls-info">
-            <h3>📺 HLS Stream Examples</h3>
-            <p>Enter an HLS stream URL ending in <code>.m3u8</code></p>
-            <p style="margin-top: 0.5rem;">
-                <a href="#" onclick="setUrl('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'); return false;" style="color: var(--highlight-color);">
-                    Test Stream (Mux)
-                </a> | 
-                <a href="#" onclick="setUrl('https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8'); return false;" style="color: var(--highlight-color);">
-                    Apple Demo
-                </a>
-            </p>
+        <!-- Help Section -->
+        <div class="help-section">
+            <div class="help-card">
+                <h3>📱 How to use with Screen Stream app:</h3>
+                <ol>
+                    <li>Install <strong>Screen Stream</strong> app on your Kodi/Android device</li>
+                    <li>Open the app and start the RTSP server</li>
+                    <li>Note the RTSP URL shown (e.g., <code>rtsp://192.168.1.100:5540/screen</code>)</li>
+                    <li>Enter that URL above and click <strong>Start Stream</strong></li>
+                    <li>The service will transcode RTSP → HLS and play in your browser!</li>
+                </ol>
+            </div>
         </div>
     </div>
 
-    <script>
-        const video = document.getElementById('video');
-        const urlInput = document.getElementById('stream-url');
-        const playBtn = document.getElementById('play-btn');
-        const statusEl = document.getElementById('status');
-        const videoContainer = document.getElementById('video-container');
-        const controls = document.getElementById('controls');
-        const loading = document.getElementById('loading');
-        const typeBtns = document.querySelectorAll('.type-btn');
-        const rtspInfo = document.getElementById('rtsp-info');
-        const hlsInfo = document.getElementById('hls-info');
-        
-        let hls = null;
-        let selectedType = 'hls';
+    <div class="footer">
+        Shadow Player RTSP Bridge | Requires FFmpeg on the Kodi device
+    </div>
 
-        function setUrl(url) {
-            urlInput.value = url;
-            urlInput.focus();
+    <script>
+        // Configuration
+        const BRIDGE_PORT = 8089;
+        const POLL_INTERVAL = 2000;
+        const HLS_RETRY_DELAY = 3000;
+
+        // Elements
+        const rtspInput = document.getElementById('rtsp-url');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const statusDot = document.getElementById('status-dot');
+        const statusLabel = document.getElementById('status-label');
+        const statusDetail = document.getElementById('status-detail');
+        const videoSection = document.getElementById('video-section');
+        const video = document.getElementById('video');
+        const videoOverlay = document.getElementById('video-overlay');
+        const messageEl = document.getElementById('message');
+
+        // State
+        let hls = null;
+        let bridgeUrl = '';
+        let hlsUrl = '';
+        let statusPollTimer = null;
+        let isStarting = false;
+
+        // Determine bridge URL based on current location
+        function getBridgeUrl() {
+            const host = window.location.hostname || 'localhost';
+            return `http://${host}:${BRIDGE_PORT}`;
         }
 
-        // Type selection
-        typeBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                typeBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedType = btn.dataset.type;
+        bridgeUrl = getBridgeUrl();
+
+        // Show message
+        function showMessage(text, type = 'info') {
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            if (type !== 'error') {
+                setTimeout(() => {
+                    messageEl.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        function hideMessage() {
+            messageEl.style.display = 'none';
+        }
+
+        // Update status display
+        function updateStatus(status) {
+            if (status.running) {
+                statusDot.className = 'status-dot running';
+                statusLabel.textContent = 'Transcoding active';
+                statusDetail.textContent = `Uptime: ${status.uptime}s | ${status.rtsp_url}`;
+                stopBtn.style.display = 'block';
+                startBtn.disabled = true;
+                startBtn.textContent = '▶ Running...';
                 
-                // Show/hide info boxes
-                rtspInfo.style.display = selectedType === 'rtsp-info' ? 'block' : 'none';
-                hlsInfo.style.display = selectedType === 'hls' ? 'block' : 'none';
-                
-                // Update placeholder
-                if (selectedType === 'hls') {
-                    urlInput.placeholder = 'http://192.168.1.x:8080/stream.m3u8';
-                } else if (selectedType === 'rtsp-info') {
-                    urlInput.placeholder = 'See instructions below for RTSP setup';
-                } else {
-                    urlInput.placeholder = 'http://example.com/video.mp4';
+                // Save the HLS URL
+                if (status.hls_url) {
+                    hlsUrl = status.hls_url;
                 }
-            });
+            } else {
+                statusDot.className = 'status-dot';
+                statusLabel.textContent = 'Not connected';
+                statusDetail.textContent = status.error || 'Enter RTSP URL above';
+                stopBtn.style.display = 'none';
+                startBtn.disabled = false;
+                startBtn.textContent = '▶ Start Stream';
+                
+                if (status.error) {
+                    statusDot.className = 'status-dot error';
+                }
+            }
+        }
+
+        // Check bridge status
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${bridgeUrl}/status`);
+                const status = await response.json();
+                updateStatus(status);
+                return status;
+            } catch (e) {
+                updateStatus({ 
+                    running: false, 
+                    error: 'Cannot reach RTSP Bridge service. Is it installed and running?' 
+                });
+                return null;
+            }
+        }
+
+        // Start transcoding
+        async function startTranscoding() {
+            const rtspUrl = rtspInput.value.trim();
+            
+            if (!rtspUrl) {
+                showMessage('Please enter an RTSP URL', 'error');
+                rtspInput.classList.add('error');
+                return;
+            }
+            
+            if (!rtspUrl.startsWith('rtsp://')) {
+                showMessage('URL must start with rtsp://', 'error');
+                rtspInput.classList.add('error');
+                return;
+            }
+            
+            rtspInput.classList.remove('error');
+            hideMessage();
+            
+            isStarting = true;
+            startBtn.disabled = true;
+            startBtn.textContent = '⏳ Starting...';
+            statusDot.className = 'status-dot starting';
+            statusLabel.textContent = 'Starting transcoder...';
+            statusDetail.textContent = 'Launching FFmpeg...';
+            
+            try {
+                const response = await fetch(`${bridgeUrl}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rtsp_url: rtspUrl })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Transcoding started! Waiting for stream...', 'success');
+                    hlsUrl = result.hls_url;
+                    
+                    // Save URL for next time
+                    localStorage.setItem('shadowplayer_rtsp_url', rtspUrl);
+                    
+                    // Show video section and start playback after a delay
+                    videoSection.classList.add('active');
+                    videoOverlay.classList.remove('hidden');
+                    
+                    // Wait for HLS segments to be ready
+                    setTimeout(() => {
+                        startHLSPlayback(hlsUrl);
+                    }, HLS_RETRY_DELAY);
+                    
+                } else {
+                    showMessage(result.error || 'Failed to start transcoding', 'error');
+                    isStarting = false;
+                }
+                
+            } catch (e) {
+                showMessage(`Connection error: ${e.message}. Is the RTSP Bridge service running?`, 'error');
+                isStarting = false;
+                startBtn.disabled = false;
+                startBtn.textContent = '▶ Start Stream';
+            }
+        }
+
+        // Stop transcoding
+        async function stopTranscoding() {
+            try {
+                await fetch(`${bridgeUrl}/stop`, { method: 'POST' });
+                stopHLSPlayback();
+                videoSection.classList.remove('active');
+                showMessage('Stream stopped', 'info');
+            } catch (e) {
+                showMessage(`Error stopping stream: ${e.message}`, 'error');
+            }
+        }
+
+        // Start HLS playback
+        function startHLSPlayback(url) {
+            stopHLSPlayback();
+            
+            console.log('Starting HLS playback:', url);
+            
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    debug: false,
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 30,
+                    liveSyncDuration: 3,
+                    liveMaxLatencyDuration: 10,
+                    liveDurationInfinity: true,
+                });
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    console.log('HLS manifest parsed');
+                    videoOverlay.classList.add('hidden');
+                    video.play().catch(() => {});
+                    isStarting = false;
+                });
+
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('HLS error:', data);
+                    
+                    if (data.fatal) {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                // Try to recover or retry
+                                if (isStarting) {
+                                    console.log('HLS not ready yet, retrying...');
+                                    setTimeout(() => {
+                                        hls.loadSource(url);
+                                    }, 2000);
+                                } else {
+                                    hls.startLoad();
+                                }
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.log('Media error, attempting recovery');
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                showMessage(`Stream error: ${data.details}`, 'error');
+                                break;
+                        }
+                    }
+                });
+
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari native HLS
+                video.src = url;
+                video.addEventListener('loadedmetadata', () => {
+                    videoOverlay.classList.add('hidden');
+                    video.play().catch(() => {});
+                    isStarting = false;
+                }, { once: true });
+            } else {
+                showMessage('HLS playback not supported in this browser', 'error');
+            }
+        }
+
+        // Stop HLS playback
+        function stopHLSPlayback() {
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+            video.pause();
+            video.src = '';
+        }
+
+        // Event Listeners
+        startBtn.addEventListener('click', startTranscoding);
+        stopBtn.addEventListener('click', stopTranscoding);
+
+        rtspInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') startTranscoding();
         });
 
-        // Play button
-        playBtn.addEventListener('click', () => playStream());
-        urlInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') playStream();
+        rtspInput.addEventListener('input', () => {
+            rtspInput.classList.remove('error');
         });
 
-        // Controls
+        document.getElementById('unmute-btn').addEventListener('click', () => {
+            video.muted = !video.muted;
+            document.getElementById('unmute-btn').textContent = video.muted ? '🔊 Unmute' : '🔇 Mute';
+        });
+
         document.getElementById('fullscreen-btn').addEventListener('click', () => {
             if (video.requestFullscreen) video.requestFullscreen();
             else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
-            else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen(); // iOS
+            else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
         });
 
         document.getElementById('pip-btn').addEventListener('click', async () => {
@@ -359,159 +658,33 @@
                     await video.requestPictureInPicture();
                 }
             } catch (e) {
-                setStatus('Picture-in-Picture not supported', 'error');
+                showMessage('Picture-in-Picture not supported', 'error');
             }
         });
 
-        document.getElementById('stop-btn').addEventListener('click', () => stopStream());
-
-        function setStatus(message, type = '') {
-            statusEl.textContent = message;
-            statusEl.className = 'status ' + type;
-            statusEl.style.display = message ? 'block' : 'none';
-        }
-
-        function showLoading(show) {
-            loading.classList.toggle('hidden', !show);
-        }
-
-        function stopStream() {
-            if (hls) {
-                hls.destroy();
-                hls = null;
+        // Initialize
+        async function init() {
+            // Load saved URL
+            const savedUrl = localStorage.getItem('shadowplayer_rtsp_url');
+            if (savedUrl) {
+                rtspInput.value = savedUrl;
             }
-            video.pause();
-            video.src = '';
-            videoContainer.classList.remove('active');
-            controls.classList.remove('active');
-            setStatus('Stream stopped');
-        }
-
-        async function playStream() {
-            let url = urlInput.value.trim();
-            if (!url) {
-                setStatus('Please enter a stream URL', 'error');
-                return;
+            
+            // Check initial status
+            const status = await checkStatus();
+            
+            // If already running, show video and try to play
+            if (status && status.running && status.hls_url) {
+                hlsUrl = status.hls_url;
+                videoSection.classList.add('active');
+                startHLSPlayback(hlsUrl);
             }
-
-            // Save URL
-            localStorage.setItem('shadowstream_url', url);
-
-            stopStream();
-            setStatus('Connecting...', 'warning');
-            videoContainer.classList.add('active');
-            showLoading(true);
-
-            // Detect format
-            const isHLS = url.includes('.m3u8') || selectedType === 'hls';
-            const isDirect = selectedType === 'direct' || url.match(/\.(mp4|webm|ogg)$/i);
-
-            try {
-                if (isHLS && !isDirect) {
-                    await playHLS(url);
-                } else {
-                    await playDirect(url);
-                }
-                controls.classList.add('active');
-            } catch (error) {
-                console.error('Playback error:', error);
-                setStatus('Error: ' + error.message, 'error');
-                showLoading(false);
-            }
+            
+            // Start polling for status
+            statusPollTimer = setInterval(checkStatus, POLL_INTERVAL);
         }
 
-        async function playHLS(url) {
-            return new Promise((resolve, reject) => {
-                if (Hls.isSupported()) {
-                    hls = new Hls({
-                        debug: false,
-                        enableWorker: true,
-                        lowLatencyMode: true,
-                        backBufferLength: 30,
-                    });
-
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        showLoading(false);
-                        setStatus('🟢 Stream connected', 'success');
-                        video.play().catch(() => {});
-                        resolve();
-                    });
-
-                    hls.on(Hls.Events.ERROR, (event, data) => {
-                        console.error('HLS error:', data);
-                        if (data.fatal) {
-                            showLoading(false);
-                            switch (data.type) {
-                                case Hls.ErrorTypes.NETWORK_ERROR:
-                                    setStatus('Network error - check URL and try again', 'error');
-                                    break;
-                                case Hls.ErrorTypes.MEDIA_ERROR:
-                                    setStatus('Media error - trying to recover...', 'warning');
-                                    hls.recoverMediaError();
-                                    break;
-                                default:
-                                    setStatus('Stream error: ' + data.details, 'error');
-                            }
-                            reject(new Error(data.details));
-                        }
-                    });
-
-                    hls.loadSource(url);
-                    hls.attachMedia(video);
-                    
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    // Safari native HLS
-                    video.src = url;
-                    video.addEventListener('loadedmetadata', () => {
-                        showLoading(false);
-                        setStatus('🟢 Stream connected (native HLS)', 'success');
-                        video.play().catch(() => {});
-                        resolve();
-                    }, { once: true });
-                    video.addEventListener('error', () => {
-                        showLoading(false);
-                        reject(new Error('Failed to load stream'));
-                    }, { once: true });
-                } else {
-                    reject(new Error('HLS not supported in this browser'));
-                }
-            });
-        }
-
-        async function playDirect(url) {
-            return new Promise((resolve, reject) => {
-                video.src = url;
-                
-                video.onerror = () => {
-                    showLoading(false);
-                    const error = video.error;
-                    let msg = 'Unknown error';
-                    if (error) {
-                        switch(error.code) {
-                            case 1: msg = 'Loading aborted'; break;
-                            case 2: msg = 'Network error - cannot reach stream'; break;
-                            case 3: msg = 'Decode error - format not supported'; break;
-                            case 4: msg = 'Source not supported by browser'; break;
-                        }
-                    }
-                    setStatus('Error: ' + msg, 'error');
-                    reject(new Error(msg));
-                };
-
-                video.onloadeddata = () => {
-                    showLoading(false);
-                    setStatus('🟢 Stream connected', 'success');
-                    resolve();
-                };
-
-                video.load();
-                video.play().catch(() => {});
-            });
-        }
-
-        // Load saved URL
-        const savedUrl = localStorage.getItem('shadowstream_url');
-        if (savedUrl) urlInput.value = savedUrl;
+        init();
     </script>
 </body>
 </html>
