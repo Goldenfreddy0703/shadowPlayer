@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="webinterface.shadowplayer.modern" name="Shadow Player Modern" provider-name="bailus, Goldenfreddy0703" version="1.0.0">
+	<requires>
+		<import addon="xbmc.webinterface" version="1.0.0"/>
+	</requires>
+	<extension point="xbmc.webinterface" library="." />
+	<extension point="xbmc.addon.metadata">
+		<platform>all</platform>
+		<summary lang="en">Mirror Kodi playback to your browser</summary>
+		<description lang="en">A browser-based video player that synchronizes its playback with Kodi. Play something in Kodi and watch it in any web browser on your network.</description>
+		<license>GPL-3.0</license>
+	</extension>
+</addon>
