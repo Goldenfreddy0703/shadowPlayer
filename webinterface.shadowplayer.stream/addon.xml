@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="webinterface.shadowplayer.stream" name="Shadow Player Stream" provider-name="Goldenfreddy0703" version="1.0.0">
+	<requires>
+		<import addon="xbmc.webinterface" version="1.0.0"/>
+	</requires>
+	<extension point="xbmc.webinterface" library="." />
+	<extension point="xbmc.addon.metadata">
+		<platform>all</platform>
+		<summary lang="en">Stream viewer with RTSP/HLS support</summary>
+		<description lang="en">A web interface for viewing RTSP and HLS streams. Enter your stream URL and watch in your browser. Works with Screen Stream app for screen mirroring.</description>
+		<license>GPL-3.0</license>
+	</extension>
+</addon>

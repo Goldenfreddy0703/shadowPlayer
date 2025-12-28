@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shadow Player - Stream</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-color: #1a1a2e;
+            --text-color: #eee;
+            --accent-color: #0f3460;
+            --highlight-color: #e94560;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 2rem;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--highlight-color);
+        }
+
+        button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--highlight-color);
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .format-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .format-btn {
+            padding: 0.5rem 1rem;
+            background: var(--accent-color);
+            font-size: 0.9rem;
+        }
+
+        .format-btn.active {
+            background: var(--highlight-color);
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 900px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .video-container.active {
+            display: block;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            max-height: 70vh;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .status.error {
+            color: #ff6b6b;
+        }
+
+        .status.success {
+            color: #4CAF50;
+        }
+
+        .examples {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .examples h3 {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 0.5rem;
+        }
+
+        .examples code {
+            display: block;
+            padding: 0.25rem 0;
+            font-size: 0.8rem;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .examples code:hover {
+            color: var(--highlight-color);
+        }
+
+        .controls {
+            display: none;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .controls.active {
+            display: flex;
+        }
+
+        .control-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Shadow Player Stream</h1>
+        <p class="subtitle">Play HLS, DASH, or direct video streams in your browser</p>
+
+        <div class="input-group">
+            <div class="input-row">
+                <input type="text" id="stream-url" placeholder="Enter stream URL (HLS, DASH, MP4, WebM...)">
+                <button id="play-btn">Play</button>
+            </div>
+            
+            <div class="format-buttons">
+                <button class="format-btn active" data-format="auto">Auto</button>
+                <button class="format-btn" data-format="hls">HLS (.m3u8)</button>
+                <button class="format-btn" data-format="direct">Direct (MP4/WebM)</button>
+            </div>
+        </div>
+
+        <div class="video-container" id="video-container">
+            <video id="video" controls autoplay></video>
+        </div>
+
+        <div class="controls" id="controls">
+            <button class="control-btn" id="fullscreen-btn">⛶ Fullscreen</button>
+            <button class="control-btn" id="stop-btn">⏹ Stop</button>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="examples">
+            <h3>Example URLs (click to use):</h3>
+            <code data-url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8">HLS Test Stream (Mux)</code>
+            <code data-url="https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8">Apple HLS Demo</code>
+            <code data-url="http://YOUR_IP:PORT/stream.m3u8">Your RTSP-to-HLS server</code>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const urlInput = document.getElementById('stream-url');
+        const playBtn = document.getElementById('play-btn');
+        const statusEl = document.getElementById('status');
+        const videoContainer = document.getElementById('video-container');
+        const controls = document.getElementById('controls');
+        const formatBtns = document.querySelectorAll('.format-btn');
+        
+        let hls = null;
+        let selectedFormat = 'auto';
+
+        // Format selection
+        formatBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                formatBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedFormat = btn.dataset.format;
+            });
+        });
+
+        // Example URLs
+        document.querySelectorAll('.examples code').forEach(el => {
+            el.addEventListener('click', () => {
+                urlInput.value = el.dataset.url;
+            });
+        });
+
+        // Play button
+        playBtn.addEventListener('click', () => playStream());
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') playStream();
+        });
+
+        // Controls
+        document.getElementById('fullscreen-btn').addEventListener('click', () => {
+            if (video.requestFullscreen) video.requestFullscreen();
+            else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
+        });
+
+        document.getElementById('stop-btn').addEventListener('click', () => stopStream());
+
+        function setStatus(message, type = '') {
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + type;
+        }
+
+        function detectFormat(url) {
+            if (selectedFormat !== 'auto') return selectedFormat;
+            
+            const lower = url.toLowerCase();
+            if (lower.includes('.m3u8') || lower.includes('hls')) return 'hls';
+            if (lower.includes('.mpd') || lower.includes('dash')) return 'dash';
+            return 'direct';
+        }
+
+        function stopStream() {
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+            video.pause();
+            video.src = '';
+            videoContainer.classList.remove('active');
+            controls.classList.remove('active');
+            setStatus('Stream stopped');
+        }
+
+        async function playStream() {
+            const url = urlInput.value.trim();
+            if (!url) {
+                setStatus('Please enter a stream URL', 'error');
+                return;
+            }
+
+            stopStream();
+            setStatus('Connecting...');
+
+            const format = detectFormat(url);
+            console.log('Playing URL:', url, 'Format:', format);
+
+            try {
+                if (format === 'hls') {
+                    await playHLS(url);
+                } else if (format === 'dash') {
+                    setStatus('DASH support coming soon - try HLS for now', 'error');
+                    return;
+                } else {
+                    await playDirect(url);
+                }
+
+                videoContainer.classList.add('active');
+                controls.classList.add('active');
+                
+            } catch (error) {
+                console.error('Playback error:', error);
+                setStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function playHLS(url) {
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    debug: false,
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                });
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    setStatus('HLS stream connected', 'success');
+                    video.play().catch(() => {});
+                });
+
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('HLS error:', data);
+                    if (data.fatal) {
+                        setStatus('HLS Error: ' + data.type + ' - ' + data.details, 'error');
+                    }
+                });
+
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari native HLS
+                video.src = url;
+                video.addEventListener('loadedmetadata', () => {
+                    setStatus('HLS stream connected (native)', 'success');
+                    video.play().catch(() => {});
+                });
+            } else {
+                throw new Error('HLS not supported in this browser');
+            }
+        }
+
+        async function playDirect(url) {
+            video.src = url;
+            
+            video.onerror = () => {
+                const error = video.error;
+                let msg = 'Unknown error';
+                if (error) {
+                    switch(error.code) {
+                        case 1: msg = 'Loading aborted'; break;
+                        case 2: msg = 'Network error'; break;
+                        case 3: msg = 'Decode error - format not supported'; break;
+                        case 4: msg = 'Source not supported'; break;
+                    }
+                }
+                setStatus('Error: ' + msg, 'error');
+            };
+
+            video.onloadeddata = () => {
+                setStatus('Stream connected', 'success');
+            };
+
+            video.load();
+            video.play().catch(() => {});
+        }
+
+        // Load saved URL
+        const savedUrl = localStorage.getItem('shadowstream_url');
+        if (savedUrl) urlInput.value = savedUrl;
+
+        // Save URL on play
+        urlInput.addEventListener('change', () => {
+            localStorage.setItem('shadowstream_url', urlInput.value);
+        });
+    </script>
+</body>
+</html>
