@@ -36,6 +36,9 @@ class ShadowPlayer {
             statLag: document.getElementById('stat-lag'),
             statSync: document.getElementById('stat-sync'),
             statusIndicator: document.getElementById('status-indicator'),
+            videoError: document.getElementById('video-error'),
+            errorText: document.getElementById('error-text'),
+            errorUrl: document.getElementById('error-url'),
         };
 
         this.kodi = null;
@@ -218,7 +221,41 @@ class ShadowPlayer {
             const url = await this.kodi.prepareDownload(item.file);
             console.log('Media URL:', url);
             
+            // Show the URL in the subtitle for debugging
+            this.elements.subtitle.textContent = `Loading: ${item.file.split('/').pop()}`;
+            
+            // Hide any previous error
+            this.elements.videoError.classList.remove('visible');
+            
             this.elements.video.src = url;
+            
+            // Add error handler for video loading
+            this.elements.video.onerror = (e) => {
+                const error = this.elements.video.error;
+                let errorMsg = 'Unknown error';
+                if (error) {
+                    switch(error.code) {
+                        case 1: errorMsg = 'Video loading aborted'; break;
+                        case 2: errorMsg = 'Network error - file may not be accessible'; break;
+                        case 3: errorMsg = 'Format not supported by browser (try MP4/H.264)'; break;
+                        case 4: errorMsg = 'Format not supported by browser'; break;
+                    }
+                }
+                console.error('Video error:', errorMsg, error);
+                this.elements.subtitle.textContent = `⚠️ ${errorMsg}`;
+                
+                // Show error overlay
+                this.elements.errorText.textContent = errorMsg;
+                this.elements.errorUrl.textContent = `URL: ${url}`;
+                this.elements.videoError.classList.add('visible');
+            };
+            
+            this.elements.video.onloadeddata = () => {
+                console.log('Video loaded successfully');
+                this.elements.subtitle.textContent = '';
+                this.elements.videoError.classList.remove('visible');
+            };
+            
             this.elements.video.load();
             
             // Mute by default to allow autoplay
@@ -228,6 +265,7 @@ class ShadowPlayer {
             this.syncEngine.reset();
         } catch (e) {
             console.error('Failed to load media:', e);
+            this.elements.subtitle.textContent = `⚠️ Failed to load: ${e.message}`;
         }
     }
 
